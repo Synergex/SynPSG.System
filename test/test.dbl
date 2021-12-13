@@ -1,0 +1,76 @@
+;*****************************************************************************
+;
+; Title:        Test
+;
+; Description:  A test program for the SynPSG.System routines
+;
+;*****************************************************************************
+;
+; This code is supplied as seen and without warranty or support, and is used
+; at your own risk. Neither the author or Synergex accept any responsability
+; for any loss or damage which may result from the use of this code.
+;
+;*****************************************************************************
+;
+; The test programs use hard coded default values.  You may need to modify
+; those values to perform tests that have more meaning to you.
+;
+;*****************************************************************************
+
+main
+
+.define D_NUM_TESTS 6
+
+literal
+    testNames    ,[D_NUM_TESTS]a50
+    &                   ,'mailit              SMTP mail client              '
+    &                   ,'ftpit               FTP client                    '
+    &                   ,'stringTest          String test                   '
+    &                   ,'asciiEncodingTest   ASCII Encoding Test           '
+    &                   ,'base64convertTest   BASE64 Test                   '
+    &                   ,'SynDateTimeTest     SynDateTime Test              '
+
+record
+    ttch                ,i4
+    ctr                 ,i4
+    testNumA            ,a2
+
+proc
+
+    ttch = 1024
+    open(ttch, O, 'TT:')
+
+    repeat
+    begin
+        writes (ttch, "")
+        writes (ttch, "")
+        writes (ttch, " SynPSG.System tests")
+        writes (ttch, "")
+        for ctr from 1 thru D_NUM_TESTS
+            writes(ttch, ' '+%string(ctr)+' '+testNames[ctr](21:30))
+        writes (ttch, " 0 Exit")
+        writes (ttch, "")
+        display (ttch, " Select test ")
+        reads (ttch, testNumA) [ERR=done]
+        onerror notNum
+        ctr = %atrim(testNumA)
+        offerror
+        using ctr select
+        (1 thru D_NUM_TESTS),
+        begin
+            xcall xsubr(testNames[ctr](1:20))
+        end
+        (0),
+            exitloop
+        endusing
+notNum,
+        offerror
+    end
+done,
+
+;.ifdef DBLNET
+    StopMessage()
+;.endc ;DBLNET
+
+    stop D_EXIT_SUCCESS
+endmain

@@ -1,0 +1,182 @@
+;*****************************************************************************
+;
+; Title:        MailIt
+;
+; Description:  A test routine for the SmtpMail classes
+;
+;*****************************************************************************
+;
+; This code is supplied as seen and without warranty or support, and is used
+; at your own risk. Neither the author or Synergex accept any responsability
+; for any loss or damage which may result from the use of this code.
+;
+;*****************************************************************************
+
+import SynPSG.System
+import SynPSG.System.IO
+import SynPSG.System.Net
+import SynPSG.System.Net.Mail
+import SynPSG.System.Net.Mime
+import SynPSG.System.Net.Sockets
+import SynPSG.System.Security
+
+subroutine MailIt
+
+    record
+        status      ,i4         ;Return status from SmtpMail call
+        tt          ,i4         ;Terminal channel
+        server      ,a40        ;Name or IP address of SMTP server
+        sender      ,a40        ;Senders e-mail address
+        recipient   ,a40        ;Recipient name
+        subject     ,a80        ;Subject
+        body        ,a1024      ;Body text
+        attachment  ,a80        ;Attachment name
+        filename    ,a256       ;attachment filename
+        fName       ,a256       ;name part of filename
+        fExt        ,a256       ;extension part of filename
+        chan        ,i4         ;channel
+        aPort       ,a5         ;port
+        port        ,i4         ;port
+proc
+
+    open(tt=%syn_freechn,I,'tt:')
+
+    xcall flags(7004020,1)
+
+    writes(tt,"")
+    writes(tt,"MailIt - A test program for SmtpMail")
+    writes(tt,"")
+
+    ;; put default values here
+    server = ''
+    port = 25
+    sender = ''
+    recipient = ''
+    attachment = ''
+    subject = ''
+    body = ''
+
+    subject = "A test message from MailIt " + %datetime
+    body = "This is a test e-mail message which was sent by the MailIt program using the SmtpMail function."
+    attachment = "mailit.dbl"
+
+    while(.not.server)
+    begin
+        display(tt,"Name of IP address of SMTP server: ")
+        reads(tt,server,done)
+    end
+
+    while(port<=0)
+    begin
+        display(tt,"Name of port of SMTP server (25): ")
+        reads(tt,aPort,done)
+        try
+        begin
+            port = aPort(1:%trim(aPort))
+        end
+        catch (ex ,@Exception)
+        begin
+            clear port
+        end
+        endtry
+        using port select
+        (1 thru 65535),
+            nop
+        (),
+            port = 0
+        endusing
+    end
+
+    while(.not.sender)
+    begin
+        display(tt,"Enter the senders e-mail address: ")
+        reads(tt,sender,done)
+    end
+
+    while(.not.subject)
+    begin
+        display(tt,"Enter the subject: ")
+        reads(tt,subject,done)
+    end
+
+    if(.not.body)
+    begin
+        display(tt,"Enter the email body text: ")
+        reads(tt,body,done)
+    end
+
+    if(.not.attachment)
+    begin
+        display(tt,"Enter an attachment name: ")
+        reads(tt,attachment,done)
+    end
+
+    try
+    begin
+        ;; email file to user
+        data mailClient     ,@SMTPClient
+        data mailMsg        ,@MailMessage
+        data mailAtt        ,@Attachment
+        data myContentType  ,string
+
+        mailClient = new SMTPClient(server, port)
+        mailAtt = ^NULL
+
+        mailMsg = new MailMessage(%atrim(recipient), %atrim(sender), %atrim(subject), %atrim(body))
+
+        if(attachment)
+        begin
+            try
+            begin
+                open(chan=%syn_freechn, I, attachment)
+                close chan
+                parse(attachment,,,,, fName, fExt,, filename)
+            end
+            catch (ex ,@exception)
+                clear filename
+            endtry
+            clear chan
+
+            if(!filename)
+                exit
+
+            locase fExt
+            using fExt select
+            ('.txt','.xml'),
+                myContentType = 'text/plain; charset=us-ascii'
+            (),
+                myContentType = 'application/octet-stream'
+            endusing
+
+            if(myContentType.Length > 0) then
+                mailAtt = new Attachment(%atrim(filename), new ContentType(myContentType))
+            else
+                mailAtt = new Attachment(%atrim(filename), new ContentType())
+
+            begin
+                parse (filename, true,,,, fName, fExt)
+                mailAtt.Name = %atrim(fName) + %atrim(fExt)
+            end
+
+            mailMsg.Attachments.Add(mailAtt)
+
+            mailMsg.Body = %atrim(body) + %char(13)+%char(10)+%char(13)+%char(10)+"[Attachment:"+%atrim(filename)+"]"
+        end
+
+        mailClient.Send(mailMsg)
+
+        clear mailMsg, mailAtt, mailClient
+        writes(tt, "e-mail sent")
+    end
+    catch (ex ,@Exception)
+    begin
+        writes(tt, "Mailit error:"+ex.Message)
+    end
+    endtry
+
+done,
+    close tt
+
+    xreturn
+end
+

@@ -1,0 +1,538 @@
+;;**********************************************************************
+;;
+;; Title:       Uri.dbc
+;;
+;; Type:        Class
+;;
+;; Description:
+;;
+;; Author:      William Hawkins, Synergex Professional Services Group
+;;
+;; Copyright    © 2011 Synergex International Corporation.  All rights reserved.
+;;
+;; WARNING:     All content constituting or related to this code ("Code") is the
+;;              property of Synergex International Corporation ("Synergex") and
+;;              is protected by U.S. and international copyright laws.
+;;              If you were given this Code by a Synergex employee then you may
+;;              use and modify it freely for use within your applications.
+;;
+;;              However, you may use the Code only for your personal use.
+;;              Any other use, unless otherwise authorized in writing by
+;;              Synergex is strictly prohibited.  You may not under any
+;;              circumstances distribute this Code, or any modified version
+;;              or part of this Code, to any third party without first
+;;              obtaining written permission to do so from Synergex.
+;;              In using this Code you accept that it is provided as is,
+;;              and without support or warranty of any kind.
+;;
+;;              Neither Synergex nor the author accept any responsibility
+;;              for any losses or damages of any nature which may arise
+;;              from the use of this Code.  This header information must
+;;              remain unaltered in the Code at all times.  Possession
+;;              of this Code, or any modified version or part of this Code,
+;;              indicates your acceptance of these terms.
+;;
+;;***********************************************************************************
+
+namespace SynPSG.System
+
+class Uri
+
+    public enum UriKind
+        RelativeOrAbsolute              ,-1
+        Absolute
+        Relative
+    endenum
+
+    public enum UriHostNameType
+        Unknown                         ,-1
+        Basic
+        Dns
+        IPv4
+        IPv6
+    endenum
+
+    public const SchemeDelimiter        ,a* ,'//'
+    public const UriSchemeFile          ,a* ,'file:'
+    public const UriSchemeFtp           ,a* ,'ftp:'
+    public const UriSchemeGopher        ,a* ,'gopher:'
+    public const UriSchemeHttp          ,a* ,'http:'
+    public const UriSchemeHttps         ,a* ,'https:'
+    public const UriSchemeMailto        ,a* ,'mailto:'
+    public const UriSchemeNetPipe       ,a* ,'netpipe:' ;;todo
+    public const UriSchemeNetTcp        ,a* ,'nettcp:' ;;todo
+    public const UriSchemeNews          ,a* ,'news:'
+    public const UriSchemeNntp          ,a* ,'nntp:'
+
+    private mUri                ,string
+    private mOriginalString     ,string
+    private mScheme             ,string
+    private mUserInfo           ,string
+    private mHost               ,string
+    private mPort               ,int
+    private mPath               ,string
+    private mQuery              ,string
+    private mFragment           ,string
+    private mUriKind            ,UriKind
+
+    public method Uri
+        req in  aUri            ,string
+        endparams
+        record
+            stPos               ,i4
+            pos                 ,i4
+        endrecord
+    proc
+        mUriKind = UriKind.RelativeOrAbsolute
+
+        stPos = 1
+        if(pos = %instr(stPos, aUri, SchemeDelimiter)) then
+        begin
+            mScheme = aUri(stPos, pos-1)
+            stPos = pos + ^size(SchemeDelimiter)
+        end
+        else
+        begin
+            mUriKind = UriKind.relative
+        end
+
+        using mScheme select
+        (UriSchemeFile),
+            call fileUri
+        (UriSchemeGopher),
+            nop
+        (UriSchemeMailto),
+            nop
+        (UriSchemeNetPipe),
+            nop
+        (UriSchemeNetTcp),
+            nop
+        (UriSchemeNews),
+            nop
+        (UriSchemeNntp),
+            nop
+        (),
+            call genericUri
+        endusing
+
+        mreturn
+
+    fileUri,
+
+        mPath = aUri(stPos, ^size(aUri))
+
+        if(%instr(1, mPath, ':') < %instr(1, mPath, '/')) then
+            mUriKind = UriKind.Relative
+        else
+            mUriKind = UriKind.Absolute
+
+        mUri = aUri
+        return
+
+    genericUri,
+
+        if(pos = %instr(stPos, aUri, '@'))
+        begin
+            mUserInfo = aUri(stPos, pos-1)
+            stPos = pos + 1
+        end
+
+        if(pos = %instr(stPos, aUri, ':')) then
+        begin
+            mHost = aUri(stPos, pos-1)
+            stPos = pos + 1
+
+            if(pos = %instr(stPos, aUri, '/'))
+            begin
+                mPort = aUri(stPos, pos-1)
+                stPos = pos
+            end
+        end
+        else
+        begin
+            if(pos = %instr(stPos, aUri, '/'))
+            begin
+                mHost = aUri(stPos, pos-1)
+                stPos = pos
+            end
+        end
+
+        if(pos = %instr(stPos, aUri, '?')) then
+        begin
+            mPath = aUri(stPos, pos-1)
+            call checkUriKind
+            stPos = pos + 1
+        end
+        else
+        begin
+            mPath = aUri(stPos, ^size(aUri))
+            call checkUriKind
+            return
+        end
+
+        if(pos = %instr(stPos, aUri, '#'))
+        begin
+            mQuery = aUri(stPos, pos-1)
+            stPos = pos + ^size(SchemeDelimiter)
+        end
+
+        if(stPos <= ^size(aUri))
+        begin
+            mFragment = aUri(stPos, pos-1)
+        end
+
+        mUri = aUri
+        return
+
+    checkUriKind,
+
+        if(mHost.Length == 0 ||
+        &  mPath.StartsWith('.'))
+        begin
+            mUriKind = UriKind.Relative
+            return
+        end
+
+        mUriKind = UriKind.Absolute
+        return
+
+    endmethod
+
+    public method Uri
+        req in  aUri            ,string
+        req in  aUriKind        ,UriKind
+        endparams
+        this(aUri)
+    proc
+        mUriKind = aUriKind
+    endmethod
+
+    public method Uri
+        req in  aUri            ,@Uri
+        req in  aRelUri         ,string
+        endparams
+    proc
+        throw new ApplicationException("Uri(Uri,string) not supported")
+    endmethod
+
+    public method Uri
+        req in  aUri            ,@Uri
+        req in  aRelUri         ,@Uri
+        endparams
+    proc
+        throw new ApplicationException("Uri(Uri,Uri) not supported")
+    endmethod
+
+    ;;;<summary>
+    ;;;</summary>
+    public property AbsolutePath, string
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            mreturn mPath
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property AbsoluteUri, string
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            mreturn mOriginalString
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property Authority, string
+        method get
+        proc
+            if(mUserInfo.Length > 0 && mHost.Length > 0 && mPort)
+                mreturn mUserInfo + '@' + mHost + ':' + %string(mPort)
+            if(mUserInfo.Length > 0 && mHost.Length > 0)
+                mreturn mUserInfo + '@' + mHost
+            if(mHost.Length > 0)
+                mreturn mHost
+            mreturn ''
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property DnsSafeHost, string
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            mreturn mHost
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property Fragment, string
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            mreturn mFragment
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property Host, string
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            mreturn mHost
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property HostNameType, UriHostNameType
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            if(mHost.Length < 1)
+                mreturn UriHostNameType.Unknown
+            ;;todo - need to work out if hostname is DNS/IPv4/IPv6
+            mreturn UriHostNameType.Basic
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property IsAbsoluteUri, boolean
+        method get
+        proc
+            mreturn (mUriKind == UriKind.Absolute)
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property IsDefaultPort, boolean
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            using mScheme select
+            (SchemeDelimiter),
+                nop
+            (UriSchemeFile),
+                nop
+            (UriSchemeFtp),
+            begin
+                if(mPort == 21)
+                    mreturn true
+            end
+            (UriSchemeGopher),
+                nop
+            (UriSchemeHttp),
+            begin
+                if(mPort == 80)
+                    mreturn true
+            end
+            (UriSchemeHttps),
+            begin
+                if(mPort == 80)
+                    mreturn true
+            end
+            (UriSchemeMailto),
+            begin
+                if(mPort == 25)
+                    mreturn true
+            end
+            (UriSchemeNetPipe),
+                nop
+            (UriSchemeNetTcp),
+                nop
+            (UriSchemeNews),
+                nop
+            (UriSchemeNntp),
+            begin
+                if(mPort == 119)
+                    mreturn true
+            end
+            endusing
+            mreturn false
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property IsFile, boolean
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            if(mScheme == UriSchemeFile)
+                mreturn true
+            mreturn false
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property IsLoopback, boolean
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            if(mHost.Length < 1)
+                mreturn true
+            if(stringUtil.ToLower(mHost) == 'localhost' ||
+            &  stringUtil.ToLower(mHost) == 'loopback')
+                mreturn true
+            if(mHost == '127.0.0.1')
+                mreturn true
+            mreturn false
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property IsUnc, boolean
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            if(mPath.StartsWith('\\') ||
+            &  mPath.StartsWith('//'))
+                mreturn true
+            mreturn false
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property LocalPath, string
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            mreturn '' ;;todo
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property OriginalString, string
+        method get
+        proc
+            mreturn mOriginalString
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property PathAndQuery, string
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            if(mQuery.Length > 0)
+                mreturn mPath + '?' + mQuery
+            mreturn mPath
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property Port, int
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            mreturn mPort
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property Query, string
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            mreturn mQuery
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property Scheme, string
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            mreturn mScheme
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property Segments, [#]string
+        method get
+            record
+                segments    ,[#]string
+                segNo       ,i4
+                stPos       ,i4
+                pos         ,i4
+            endrecord
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            segNo = 1
+            stPos = 2
+            while(pos = %instr(stPos, mPath, '/'))
+            begin
+                segNo += 1
+                stPos = pos+1
+            end
+            segments = new string[segNo]
+            segNo = 1
+            stPos = 2
+            while(pos = %instr(stPos, mPath, '/'))
+            begin
+                segments[segNo] = mPath(stPos, pos-1)
+                segNo += 1
+                stPos = pos+1
+            end
+            mreturn segments
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property UserEscaped, boolean
+        method get
+        proc
+            mreturn false ;;todo
+        endmethod
+    endproperty
+
+    ;;;<summary>
+    ;;;</summary>
+    public property UserInfo, string
+        method get
+        proc
+            if(mUriKind == UriKind.Relative)
+                throw new ApplicationException('InvalidOperationException')
+            mreturn mUserInfo
+        endmethod
+    endproperty
+
+
+
+endclass
+
+endnamespace
+

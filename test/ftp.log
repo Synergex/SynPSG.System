@@ -1,0 +1,77 @@
+220 ftp.beastie.tdk.net FTP server (Version 6.00LS) ready.
+USER anonymous
+331 Guest login ok, send your email address as password.
+PASS 
+230 Guest login ok, access restrictions apply.
+PWD
+257 "/" is current directory.
+PASV
+227 Entering Passive Mode (87,51,34,132,192,36)
+Data connection established.
+TYPE A
+200 Type set to A.
+LIST
+150 Opening ASCII mode data connection for '/bin/ls'.
+total 10
+drwxrwxr-x  2 0     5      512 Jul 19  2007 .snap
+drwx------  2 0     0     2048 Jul 19  2007 lost+found
+drwxr-xr-x  3 1006  1006   512 Sep 21  2009 pub
+drwxr-xr-x  3 1006  1006   512 Jun  5  2007 sup
+drwxr-xr-x  4 1006  0      512 Sep 18  2009 www
+226 Transfer complete.
+CWD /pub/FreeBSD/
+250 CWD command successful.
+PWD
+257 "/pub/FreeBSD" is current directory.
+PASV
+227 Entering Passive Mode (87,51,34,132,212,76)
+Data connection established.
+TYPE A
+200 Type set to A.
+LIST
+150 Opening ASCII mode data connection for '/bin/ls'.
+total 28792
+-rw-rw-r--   1 1006  1006       262 Jan 28  2010 .message
+-r--rw-r--   1 1006  1006         0 Nov  7  1996 .notar
+drwxrwxr-x   6 1006  1006       512 Oct 23  2006 CERT
+lrwxrwxrwx   1 1006  1006        15 Apr 19  2007 CTM -> development/CTM
+lrwxrwxrwx   1 1006  1006        17 Apr 19  2007 CVSup -> development/CVSup
+drwxrwxr-x   4 1006  1006       512 Oct 23  2006 ERRATA
+lrwxrwxrwx   1 1006  1006        17 Apr 19  2007 FreeBSD-current -> branches/-current
+lrwxrwxrwx   1 1006  1006        19 Apr 19  2007 FreeBSD-stable -> branches/4.0-stable
+lrwxrwxrwx   1 1006  1006        25 Apr 19  2007 ISO-IMAGES-alpha -> releases/alpha/ISO-IMAGES
+lrwxrwxrwx   1 1006  1006        25 Apr 19  2007 ISO-IMAGES-amd64 -> releases/amd64/ISO-IMAGES
+lrwxrwxrwx   1 1006  1006        24 Apr 19  2007 ISO-IMAGES-i386 -> releases/i386/ISO-IMAGES
+lrwxrwxrwx   1 1006  1006        24 Apr 19  2007 ISO-IMAGES-ia64 -> releases/ia64/ISO-IMAGES
+lrwxrwxrwx   1 1006  1006        24 Apr 19  2007 ISO-IMAGES-pc98 -> releases/pc98/ISO-IMAGES
+lrwxrwxrwx   1 1006  1006        27 Apr 20  2007 ISO-IMAGES-powerpc -> releases/powerpc/ISO-IMAGES
+lrwxrwxrwx   1 1006  1006        27 Apr 19  2007 ISO-IMAGES-sparc64 -> releases/sparc64/ISO-IMAGES
+-rw-rw-r--   1 1006  1006      6430 Jun 19  2004 README.TXT
+drwxrwxr-x   3 1006  1006       512 Oct 23  2006 SOC2005
+-rw-rw-r--   1 1006  1006        11 Jan 24 10:55 TIMESTAMP
+drwxrwxr-x   2 1006  1006       512 Oct 23  2006 TrustedBSD
+drwxrwxr-x   6 1006  1006       512 Oct 23  2006 branches
+drwxrwxr-x  10 1006  1006       512 Jun  3  2008 development
+-rw-r--r--   1 1006  1006     46689 Jan 24 05:43 dir.sizes
+lrwxrwxrwx   1 1006  1006        15 Apr 19  2007 distfiles -> ports/distfiles
+drwxrwxr-x  24 1006  1006      1024 Aug  7  2009 doc
+-rw-r--r--   1 1006  1006  29361457 Jan 24 05:13 ls-lR.gz
+drwxrwxr-x   3 1006  1006       512 Oct 23  2006 misc
+drwxrwxr-x  11 1006  1006       512 Dec  3 02:05 ports
+drwxrwxr-x  10 1006  1006       512 Dec  8 05:32 releases
+drwxrwxr-x   9 1006  1006       512 Jul  4  2011 snapshots
+drwxrwxr-x   5 1006  1006      1024 Oct 24  2006 tools
+drwxrwxr-x   2 1006  1006       512 Oct 24  2006 tools.NEW
+drwxrwxr-x   3 1006  1006       512 Oct 24  2006 torrents
+drwxrwxr-x   2 1006  1006       512 Oct 24  2006 updates
+226 Transfer complete.
+TYPE A
+200 Type set to A.
+PASV
+227 Entering Passive Mode (87,51,34,132,204,233)
+Data connection established.
+RETR README.TXT
+150 Opening ASCII mode data connection for 'README.TXT' (6430 bytes).
+226 Transfer complete.
+QUIT
+221 Goodbye.

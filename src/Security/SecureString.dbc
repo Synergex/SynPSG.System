@@ -1,0 +1,163 @@
+;;**********************************************************************
+;;
+;; Title:       SecureString.dbc
+;;
+;; Type:        Class
+;;
+;; Description: Partially implements a version of the SecureString class.
+;;
+;; Author:      William Hawkins, Synergex Professional Services Group
+;;
+;; Copyright    © 2011 Synergex International Corporation.  All rights reserved.
+;;
+;; WARNING:     All content constituting or related to this code ("Code") is the
+;;              property of Synergex International Corporation ("Synergex") and
+;;              is protected by U.S. and international copyright laws.
+;;              If you were given this Code by a Synergex employee then you may
+;;              use and modify it freely for use within your applications.
+;;
+;;              However, you may use the Code only for your personal use.
+;;              Any other use, unless otherwise authorized in writing by
+;;              Synergex is strictly prohibited.  You may not under any
+;;              circumstances distribute this Code, or any modified version
+;;              or part of this Code, to any third party without first
+;;              obtaining written permission to do so from Synergex.
+;;              In using this Code you accept that it is provided as is,
+;;              and without support or warranty of any kind.
+;;
+;;              Neither Synergex nor the author accept any responsibility
+;;              for any losses or damages of any nature which may arise
+;;              from the use of this Code.  This header information must
+;;              remain unaltered in the Code at all times.  Possession
+;;              of this Code, or any modified version or part of this Code,
+;;              indicates your acceptance of these terms.
+;;
+;;***********************************************************************************
+
+namespace SynPSG.System.Security
+
+    public sealed class SecureString ;;implements IDisposable
+
+        private textString  ,string ;;this should be encrypted
+        private mIsReadOnly ,boolean
+
+        public property isReadOnly ,boolean
+            method get
+            proc
+                mreturn mIsReadOnly
+            endmethod
+        endproperty
+
+        ;;;<summary>
+        ;;;Initializes a new instance of the SecureString class
+        ;;;</summary>
+        public method SecureString
+            endparams
+        proc
+            textString = ''
+            mIsReadOnly = false
+        endmethod
+
+        ;;;<summary>
+        ;;;Initializes a new instance of the SecureString class
+        ;;;</summary>
+        public method SecureString
+            aChars              ,string ;;char*
+            aSize               ,int
+            endparams
+        proc
+            if(aChars == ^NULL)
+                throw new ArgumentNullException()
+            if(aSize < 1 || aSize > 65536 || aSize > aChars.Length)
+                throw new ArgumentOutOfRangeException()
+            textString = aChars(1,aSize)
+            mIsReadOnly = false
+        endmethod
+
+        public method AppendChar,void
+            req in aChar        ,char
+            endparams
+        proc
+            if(textString.Length > 65535)
+                throw new ArgumentOutOfRangeException()
+            if(mIsReadOnly == true)
+                throw new InvalidOperationException()
+            textString = textString + aChar
+        endmethod
+
+        public method Clear    ,void
+            endparams
+        proc
+            if(mIsReadOnly == true)
+                throw new InvalidOperationException()
+            textString = ''
+        endmethod
+
+        public method InsertAt  ,void
+            req in aIndex       ,int
+            req in aChar        ,char
+            endparams
+        proc
+            if(aIndex < 0 || aIndex > textString.Length-1 || textString.Length > 65535)
+                throw new ArgumentOutOfRangeException()
+            if(mIsReadOnly == true)
+                throw new InvalidOperationException()
+
+            using aIndex select
+            (0),
+                textString = aChar + textString
+            (textString.Length-1),
+                textString = textString(1:aIndex) + aChar
+            (),
+                textString = textString(1:aIndex) + aChar + textString(aIndex+1,textString.Length)
+            endusing
+        endmethod
+
+        public method MakeReadOnly    ,void
+            endparams
+        proc
+            mIsReadOnly = true
+        endmethod
+
+        public method RemoveAt  ,void
+            req in aIndex       ,int
+            endparams
+        proc
+            if(aIndex < 0 || aIndex > textString.Length-1 || textString.Length < 1)
+                throw new ArgumentOutOfRangeException()
+            if(mIsReadOnly == true)
+                throw new InvalidOperationException()
+
+            using aIndex select
+            (0),
+                textString = textString(2,textString.Length)
+            (textString.Length-1),
+                textString = textString(1:aIndex)
+            (),
+                textString = textString(1:aIndex) + textString(aIndex+2,textString.Length)
+            endusing
+        endmethod
+
+        public method SetAt     ,void
+            req in aIndex       ,int
+            req in aChar        ,char
+            endparams
+        proc
+            if(aIndex < 0 || aIndex > textString.Length-1)
+                throw new ArgumentOutOfRangeException()
+            if(mIsReadOnly == true)
+                throw new InvalidOperationException()
+
+            using aIndex select
+            (0),
+                textString = aChar + textString(2,textString.Length)
+            (textString.Length-1),
+                textString = textString(1:aIndex) + aChar
+            (),
+                textString = textString(1:aIndex) + aChar + textString(aIndex+2,textString.Length)
+            endusing
+        endmethod
+
+    endclass
+
+endnamespace

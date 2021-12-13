@@ -1,0 +1,35 @@
+;*****************************************************************************
+;
+; Title:        Base64ConvertTest
+;
+; Description:  A test routine for the Convert class
+;
+;*****************************************************************************
+;
+; This code is supplied as seen and without warranty or support, and is used
+; at your own risk. Neither the author or Synergex accept any responsability
+; for any loss or damage which may result from the use of this code.
+;
+;*****************************************************************************
+
+import SynPSG.System
+
+subroutine Base64ConvertTest
+
+    record
+        b64String       ,string
+        oldString       ,a256
+    endrecord
+
+proc
+    open(1,O,'TT:')
+    oldString = "This is a test."
+    writes(1,"Original String:")
+    writes(1,%atrim(oldString))
+    writes(1,"")
+    b64String = Convert.ToBase64String(%atrim(oldString))
+    writes(1,"Converted String:")
+    writes(1,b64String)
+    close 1
+    xreturn
+end

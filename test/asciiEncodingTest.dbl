@@ -1,0 +1,38 @@
+;*****************************************************************************
+;
+; Title:        asciiEncodingTest
+;
+; Description:  A test routine for the ASCIIEncoding class
+;
+;*****************************************************************************
+;
+; This code is supplied as seen and without warranty or support, and is used
+; at your own risk. Neither the author or Synergex accept any responsability
+; for any loss or damage which may result from the use of this code.
+;
+;*****************************************************************************
+
+import SynPSG.System.Text.Encoding
+
+subroutine asciiEncodingTest
+
+    record
+        byteArray       ,[#]@Byte
+        oldString       ,string
+        wrkByte         ,@Byte
+    endrecord
+
+proc
+    open(1,O,'TT:')
+    oldString = "This is a test."
+    writes(1,"Original String:")
+    writes(1,%atrim(oldString))
+    writes(1,"")
+    byteArray = ASCIIEncoding.GetBytes(oldString)
+    writes(1,"Characters in original string: "+%string(byteArray.Length,'ZZX'))
+    writes(1,"Values of each element in the returned byte array:")
+    foreach wrkByte in byteArray
+        writes(1,%string(wrkByte,'XXX')+"  ("+^a(wrkByte)+")")
+    close 1
+    xreturn
+end
